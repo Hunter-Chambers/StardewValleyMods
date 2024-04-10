@@ -1,0 +1,10 @@
+{
+  "Name": "Fishing Mod",
+  "Author": "Zoryn with updates made by Frostiverse",
+  "Version": "2.4.0",
+  "Description": "Lets you change some things about fishing based on a config file.",
+  "UniqueID": "Frostiverse.FishingMod",
+  "EntryDll": "FishingMod.dll",
+  "MinimumApiVersion": "4.0.0",
+  "UpdateKeys": [ ]
+}
