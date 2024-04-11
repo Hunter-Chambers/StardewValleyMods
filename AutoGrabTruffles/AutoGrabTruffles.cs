@@ -72,8 +72,8 @@ namespace AutoGrabTruffles
                 mod: ModManifest,
                 name: () => I18n.Config_WhoseToApplyLabel(professionName: I18n.Config_Gatherer()),
                 getValue: () => Config.WhoseGathererProfessionToUse,
-                setValue: value => Config.WhoseGathererProfessionToUse = value.Equals(I18n.Config_Owner()) ? "owner" : "anyone",
-                allowedValues: new string[] { I18n.Config_Owner(), I18n.Config_Anyone() }
+                setValue: value => Config.WhoseGathererProfessionToUse = value,
+                allowedValues: new string[] { "Owner", "Anyone" }
             );
 
             configMenu.AddBoolOption(
@@ -86,8 +86,8 @@ namespace AutoGrabTruffles
                 mod: ModManifest,
                 name: () => I18n.Config_WhoseToApplyLabel(professionName: I18n.Config_Botanist()),
                 getValue: () => Config.WhoseBotanistProfessionToUse,
-                setValue: value => Config.WhoseBotanistProfessionToUse = value.Equals(I18n.Config_Owner()) ? "owner" : "anyone",
-                allowedValues: new string[] { I18n.Config_Owner(), I18n.Config_Anyone() }
+                setValue: value => Config.WhoseBotanistProfessionToUse = value,
+                allowedValues: new string[] { "Owner", "Anyone" }
             );
 
             configMenu.AddBoolOption(
@@ -100,8 +100,8 @@ namespace AutoGrabTruffles
                 mod: ModManifest,
                 name: () => I18n.Config_WhoGainsXpLabel(),
                 getValue: () => Config.WhoGainsExperience,
-                setValue: value => Config.WhoGainsExperience = value.Equals(I18n.Config_Owner()) ? "owner" : "everyone",
-                allowedValues: new string[] { I18n.Config_Owner(), I18n.Config_Everyone() }
+                setValue: value => Config.WhoGainsExperience = value,
+                allowedValues: new string[] { "Owner", "Everyone" }
             );
 
             configMenu.AddBoolOption(

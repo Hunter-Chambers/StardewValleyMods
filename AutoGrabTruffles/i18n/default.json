@@ -6,8 +6,5 @@
   "config.gain-xp-label": "Gain Experience:",
   "config.who-gains-xp-label":  "Who Gains Experience:",
   "config.update-game-stats": "Update Game Stats:",
-  "config.owner":  "Owner",
-  "config.anyone": "Anyone",
-  "config.everyone": "Everyone",
   "config.disabled-message": "The configs for this mod are controlled by the host."
 }

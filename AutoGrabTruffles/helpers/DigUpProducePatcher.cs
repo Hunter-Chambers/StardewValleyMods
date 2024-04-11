@@ -81,7 +81,7 @@ namespace AutoGrabTruffles
 
                 if (CONFIG.GainExperience)
                 {
-                    if (CONFIG.WhoGainsExperience.Equals(I18n.Config_Everyone()))
+                    if (CONFIG.WhoGainsExperience.Equals("Everyone"))
                     {
                         List<Farmer> farmers = Game1.getAllFarmers().ToList();
                         foreach (Farmer farmer in farmers)
@@ -122,7 +122,7 @@ namespace AutoGrabTruffles
                 Farmer farmer = Game1.getFarmer(pigOwnerID);
                 foragingLevel = farmer.ForagingLevel;
             }
-            else if (CONFIG.WhoseBotanistProfessionToUse.Equals(I18n.Config_Anyone()))
+            else if (CONFIG.WhoseBotanistProfessionToUse.Equals("Anyone"))
             {
                 List<Farmer> farmers = Game1.getAllFarmers().ToList();
                 int i = farmers.Count - 1;
@@ -183,7 +183,7 @@ namespace AutoGrabTruffles
             }
 
             bool hasGatherer;
-            if (CONFIG.WhoseGathererProfessionToUse.Equals(I18n.Config_Anyone()))
+            if (CONFIG.WhoseGathererProfessionToUse.Equals("Anyone"))
             {
                 List<Farmer> farmers = Game1.getAllFarmers().ToList();
                 int i = farmers.Count - 1;
