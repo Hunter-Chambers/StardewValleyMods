@@ -65,6 +65,7 @@ namespace EasyFishin.helpers
             if (bobberBar is not null)
             {
                 bobberBar.perfect = true;
+                bobberBar.fishQuality = 4;
             }
         }
 
