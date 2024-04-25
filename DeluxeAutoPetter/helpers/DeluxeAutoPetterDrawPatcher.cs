@@ -30,7 +30,7 @@ namespace DeluxeAutoPetter.helpers
                 // all of this code is taken from the source code for drawing an auto-petter.
                 // the only difference is the addition of drawing a second set of rotating hands.
 
-                if (__instance.isTemporarilyInvisible)
+                if (__instance.isTemporarilyInvisible || !Context.IsWorldReady)
                 {
                     return true;
                 }
