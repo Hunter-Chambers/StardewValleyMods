@@ -13,7 +13,7 @@ namespace DeluxeAutoPetter
 
         public override void Entry(IModHelper helper)
         {
-            I18n.Init(helper.Translation);
+            QuestDetails.Initialize(ModManifest.UniqueID);
 
             helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
             helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
@@ -95,17 +95,7 @@ namespace DeluxeAutoPetter
 
         private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
         {
-            QuestDetails.Initialize(ModManifest.UniqueID);
-            QuestMail.Initialize(ModManifest.UniqueID);
-            ObjectDetails.Initialize(ModManifest.UniqueID, Helper.DirectoryPath);
-            ShopDetails.Initialize();
             MultiplayerHandler.Initialize(ModManifest.UniqueID);
-
-            QuestDetails.LoadQuest();
-            QuestMail.LoadMail(QuestMail.GetQuestMailID(), QuestMail.GetQuestMailDetails());
-            QuestMail.LoadMail(QuestMail.GetQuestRewardMailID(), QuestMail.GetQuestRewardMailDetails());
-            ObjectDetails.LoadObject();
-            ShopDetails.LoadShopItem();
 
             if (Context.IsMainPlayer)
             {
@@ -122,7 +112,7 @@ namespace DeluxeAutoPetter
 
             if (!QuestDetails.GetIsTriggered() && e.Added.Any(item => item.QualifiedItemId.Equals(QuestDetails.GetAutoPetterID())))
             {
-                e.Player.mailForTomorrow.Add(QuestMail.GetQuestMailID());
+                e.Player.mailForTomorrow.Add(QuestDetails.GetQuestMailID());
                 QuestDetails.SetIsTriggered(true);
             }
         }
@@ -133,7 +123,7 @@ namespace DeluxeAutoPetter
 
             foreach (StardewValley.Buildings.Building building in Game1.getFarm().buildings)
             {
-                if (building.GetIndoors()?.Objects.Values.FirstOrDefault(sObject => sObject?.QualifiedItemId.Equals($"(BC){ObjectDetails.GetDeluxeAutoPetterID()}") ?? false, null) is not null)
+                if (building.GetIndoors()?.Objects.Values.FirstOrDefault(sObject => sObject?.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}") ?? false, null) is not null)
                 {
                     foreach (FarmAnimal animal in  building.GetIndoors().Animals.Values)
                     {
