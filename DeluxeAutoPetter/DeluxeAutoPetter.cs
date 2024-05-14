@@ -135,8 +135,11 @@ namespace DeluxeAutoPetter
                 {
                     foreach (FarmAnimal animal in location.Animals.Values)
                     {
-                        animal.pet(Game1.getFarmer(animal.ownerID.Value));
-                        animal.friendshipTowardFarmer.Value = Math.Min(1000, animal.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
+                        if (!animal.wasPet.Value)
+                        {
+                            animal.pet(Game1.getFarmer(animal.ownerID.Value));
+                            animal.friendshipTowardFarmer.Value = Math.Min(1000, animal.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
+                        }
                     }
                     foreach (NPC npc in location.characters)
                     {
