@@ -9,13 +9,20 @@ namespace AutoGrabTruffles
 {
     internal class DigUpProducePatcher
     {
-        #pragma warning disable CS8618 // Non-nullable field must contain a non-null value
+#pragma warning disable CS8618 // Non-nullable field must contain a non-null value
         private static IMonitor MONITOR;
         private static AutoGrabTrufflesConfig CONFIG;
-        #pragma warning restore CS8618 // Non-nullable field must contain a non-null value
+#pragma warning restore CS8618 // Non-nullable field must contain a non-null value
 
         private static readonly string TRUFFLE_QUALIFIED_ID = "(O)430";
         private static readonly string AUTO_GRABBER_QUALIFIED_ID = "(BC)165";
+
+        private static readonly string[] VALID_TRUFFLE_QUALIFIED_IDS = {
+            TRUFFLE_QUALIFIED_ID, "(O)i24KittyKat.PigsCP_BlueTruffle", "(O)i24KittyKat.PigsCP_GoldenTruffle", "(O)i24KittyKat.PigsCP_VoidTruffle",
+            "(O)WhiteTruffle"
+        };
+        private static readonly string[] VALID_MODIFIABLE_PRODUCE_QUALIFIED_IDS = VALID_TRUFFLE_QUALIFIED_IDS.Concat(new string[] {
+        }).ToArray();
 
         internal static void Initialize(IMonitor monitor, AutoGrabTrufflesConfig config)
         {
@@ -52,7 +59,7 @@ namespace AutoGrabTruffles
                 {
                     if (!DidHarvestProduce(__instance, produce))
                     {
-                        if (Utility.spawnObjectAround(Utility.getTranslatedVector2(__instance.Tile, __instance.FacingDirection, 1f), produce, __instance.currentLocation) && produce.QualifiedItemId == TRUFFLE_QUALIFIED_ID)
+                        if (Utility.spawnObjectAround(Utility.getTranslatedVector2(__instance.Tile, __instance.FacingDirection, 1f), produce, __instance.currentLocation) && VALID_TRUFFLE_QUALIFIED_IDS.Contains(produce.QualifiedItemId))
                         {
                             Game1.stats.TrufflesFound++;
                         }
@@ -78,7 +85,7 @@ namespace AutoGrabTruffles
             Random random = Utility.CreateRandom(animal.myID.Value / 2.0, Game1.stats.DaysPlayed, Game1.timeOfDay);
 
             bool doHarvestTwo = false;
-            if (produce.QualifiedItemId.Equals(TRUFFLE_QUALIFIED_ID))
+            if (VALID_MODIFIABLE_PRODUCE_QUALIFIED_IDS.Contains(produce.QualifiedItemId))
             {
                 produceItem.Quality = GetTruffleQuality(random, animal.ownerID.Get());
                 doHarvestTwo = DoesTruffleDropTwo(random, animal.ownerID.Get());
