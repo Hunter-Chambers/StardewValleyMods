@@ -13,6 +13,7 @@ namespace DeluxeAutoPetter
     {
         private static bool IS_DATA_LOADED = false;
         private static DeluxeAutoPetterConfig? Config;
+        private static readonly Dictionary<string, int> DELUXE_AUTO_PETTER_LOCATIONS = new();
 
         public override void Entry(IModHelper helper)
         {
@@ -33,6 +34,8 @@ namespace DeluxeAutoPetter
             helper.Events.Player.InventoryChanged += OnPlayerInventoryChanged;
             helper.Events.GameLoop.DayStarted += OnDayStarted;
             helper.Events.GameLoop.DayEnding += OnDayEnding;
+
+            helper.Events.World.ObjectListChanged += OnObjectListChanged;
         }
 
         private void OnModMessageReceived(object? sender, ModMessageReceivedEventArgs e)
@@ -87,6 +90,32 @@ namespace DeluxeAutoPetter
             }
         }
 
+        private void OnObjectListChanged(object? sender, ObjectListChangedEventArgs e)
+        {
+            if (!Context.IsMainPlayer) return;
+
+            foreach (KeyValuePair<Vector2, StardewValley.Object> item in e.Added)
+            {
+                if (item.Value.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}"))
+                {
+                    DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(e.Location.Name, out int addedAmount);
+                    DELUXE_AUTO_PETTER_LOCATIONS[e.Location.Name] = addedAmount + 1;
+                }
+            }
+
+            foreach (KeyValuePair<Vector2, StardewValley.Object> item in e.Removed)
+            {
+                if (item.Value.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}"))
+                {
+                    int removedAmount = DELUXE_AUTO_PETTER_LOCATIONS[e.Location.Name];
+                    DELUXE_AUTO_PETTER_LOCATIONS.Add(e.Location.Name, removedAmount - 1);
+                }
+            }
+
+            DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(e.Location.Name, out int amount);
+            if (amount <= 0) DELUXE_AUTO_PETTER_LOCATIONS.Remove(e.Location.Name);
+        }
+
         private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
         {
             if (!(Context.IsWorldReady &&
@@ -110,6 +139,20 @@ namespace DeluxeAutoPetter
                 MultiplayerHandler.LoadPerPlayerQuestData(Helper, Game1.player.UniqueMultiplayerID);
                 QuestDetails.LoadQuestData(Game1.player.UniqueMultiplayerID);
                 IS_DATA_LOADED = true;
+
+                Utility.ForEachLocation((GameLocation location) =>
+                {
+                    foreach (StardewValley.Object sObject in location.Objects.Values)
+                    {
+                        if (sObject.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}"))
+                        {
+                            DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(location.Name, out int addedAmount);
+                            DELUXE_AUTO_PETTER_LOCATIONS[location.Name] = addedAmount + 1;
+                        }
+                    }
+
+                    return true;
+                });
             }
             else Monitor.Log("You are not the host. If the host does not have this mod, then all data for this mod will be ignored.", LogLevel.Info);
         }
@@ -129,29 +172,27 @@ namespace DeluxeAutoPetter
         {
             if (!Context.IsMainPlayer) return;
 
-            Utility.ForEachLocation((GameLocation location) =>
+            foreach (KeyValuePair<string, int> locationsWithPetters in DELUXE_AUTO_PETTER_LOCATIONS)
             {
-                if (location.Objects.Values.FirstOrDefault(sObject => sObject?.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}") ?? false, null) is not null)
+                GameLocation location = Game1.getLocationFromName(locationsWithPetters.Key);
+
+                foreach (FarmAnimal animal in location.Animals.Values)
                 {
-                    foreach (FarmAnimal animal in location.Animals.Values)
+                    if (!animal.wasPet.Value)
                     {
-                        if (!animal.wasPet.Value)
-                        {
-                            animal.pet(Game1.getFarmer(animal.ownerID.Value));
-                            animal.friendshipTowardFarmer.Value = Math.Min(1000, animal.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
-                        }
-                    }
-                    foreach (NPC npc in location.characters)
-                    {
-                        if (npc is Pet pet)
-                        {
-                            pet.grantedFriendshipForPet.Set(true);
-                            pet.friendshipTowardFarmer.Value = Math.Min(1000, pet.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
-                        }
+                        animal.pet(Game1.getFarmer(animal.ownerID.Value));
+                        animal.friendshipTowardFarmer.Value = Math.Min(1000, animal.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
                     }
                 }
-                return true;
-            });
+                foreach (NPC npc in location.characters)
+                {
+                    if (npc is Pet pet)
+                    {
+                        pet.grantedFriendshipForPet.Set(true);
+                        pet.friendshipTowardFarmer.Value = Math.Min(1000, pet.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
+                    }
+                }
+            }
         }
 
         private void OnDayEnding(object? sender, DayEndingEventArgs e)
@@ -180,6 +221,25 @@ namespace DeluxeAutoPetter
                 min: 0,
                 max: 1000,
                 interval: 1
+            );
+        }
+
+        private void DisableMenuForNonHost()
+        {
+            IGenericModConfigMenuApi? configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
+            if (configMenu is null || Config is null) return;
+
+            configMenu.Unregister(ModManifest);
+
+            configMenu.Register(
+                mod: ModManifest,
+                reset: () => Config = new DeluxeAutoPetterConfig(),
+                save: () => Helper.WriteConfig(Config)
+            );
+
+            configMenu.AddParagraph(
+                mod: ModManifest,
+                text: () => I18n.Config_DisabledMessage()
             );
         }
     }

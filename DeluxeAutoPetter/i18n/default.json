@@ -1,3 +1,4 @@
 {
-  "config.additional_friendship_gain": "Additional Friendship Gain"
+  "config.additional_friendship_gain": "Additional Friendship Gain",
+  "config.disabled-message": "The configs for this mod are controlled by the host."
 }
