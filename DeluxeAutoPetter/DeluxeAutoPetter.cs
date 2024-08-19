@@ -98,8 +98,8 @@ namespace DeluxeAutoPetter
             {
                 if (item.Value.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}"))
                 {
-                    DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(e.Location.Name, out int addedAmount);
-                    DELUXE_AUTO_PETTER_LOCATIONS[e.Location.Name] = addedAmount + 1;
+                    DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(e.Location.NameOrUniqueName, out int addedAmount);
+                    DELUXE_AUTO_PETTER_LOCATIONS[e.Location.NameOrUniqueName] = addedAmount + 1;
                 }
             }
 
@@ -107,13 +107,13 @@ namespace DeluxeAutoPetter
             {
                 if (item.Value.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}"))
                 {
-                    int removedAmount = DELUXE_AUTO_PETTER_LOCATIONS[e.Location.Name];
-                    DELUXE_AUTO_PETTER_LOCATIONS.Add(e.Location.Name, removedAmount - 1);
+                    int removedAmount = DELUXE_AUTO_PETTER_LOCATIONS[e.Location.NameOrUniqueName];
+                    DELUXE_AUTO_PETTER_LOCATIONS[e.Location.NameOrUniqueName] = removedAmount - 1;
                 }
             }
 
-            DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(e.Location.Name, out int amount);
-            if (amount <= 0) DELUXE_AUTO_PETTER_LOCATIONS.Remove(e.Location.Name);
+            DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(e.Location.NameOrUniqueName, out int amount);
+            if (amount <= 0) DELUXE_AUTO_PETTER_LOCATIONS.Remove(e.Location.NameOrUniqueName);
         }
 
         private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
@@ -146,8 +146,8 @@ namespace DeluxeAutoPetter
                     {
                         if (sObject.QualifiedItemId.Equals($"(BC){QuestDetails.GetDeluxeAutoPetterID()}"))
                         {
-                            DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(location.Name, out int addedAmount);
-                            DELUXE_AUTO_PETTER_LOCATIONS[location.Name] = addedAmount + 1;
+                            DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(location.NameOrUniqueName, out int addedAmount);
+                            DELUXE_AUTO_PETTER_LOCATIONS[location.NameOrUniqueName] = addedAmount + 1;
                         }
                     }
 
