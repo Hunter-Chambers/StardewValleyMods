@@ -1,0 +1,14 @@
+{
+  "quest_mail_title": "Auto-Streichler-Verbesserungen",
+  "quest_mail_start": "Hallo!",
+  "quest_mail_details": "Ich habe gehört, du haben einen Auto-Streichler gefunden. Wenn du möchtest, könnte ich mich darum kümmern, ihn für dich zu verbessern. Stelle einfach den Auto-Streichler, 300 Hartholz und 25 Iridium-Barren in meiner Garage ab, und ich kümmere mich um den Rest!",
+  "quest_reward_mail_title": "Der Deluxe Auto-Streichler",
+  "quest_reward_mail_details": "Gute Neuigkeiten! Robin konnte mit den von dir bereitgestellten Materialien den „Deluxe Auto-Streichler“ herstellen! Ich verkaufe die Deluxe Auto-Streichler jetzt, also komm vorbei und kaufe einen, wenn du die Gelegenheit dazu hast. Deine Tiere werden ihn lieben!",
+  "quest_title": "Der Deluxe Auto-Streichler",
+  "quest_description": "Liefere die benötigten Materialien zu Robins Haus.",
+  "quest_objective": "Liefere 1 Auto-Streichler, 300 Hartholz und 25 Iridium-Barren",
+  "deluxe_auto_petter_display_name": "Deluxe Auto-Streichler",
+  "deluxe_auto_petter_description": "Verhält sich ähnlich wie ein normaler Auto-Streichler, aber mit besseren Ergebnissen! Hurra!",
+  "robin_name": "Robin",
+  "marnie_name":  "Marnie"
+}
