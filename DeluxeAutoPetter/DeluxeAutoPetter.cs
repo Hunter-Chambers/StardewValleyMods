@@ -67,6 +67,7 @@ namespace DeluxeAutoPetter
 
         private void OnReturnedToTitle(object? sender, ReturnedToTitleEventArgs e)
         {
+            DELUXE_AUTO_PETTER_LOCATIONS.Clear();
             IS_DATA_LOADED = false;
         }
 
@@ -180,7 +181,7 @@ namespace DeluxeAutoPetter
                 {
                     if (!animal.wasPet.Value)
                     {
-                        animal.pet(Game1.getFarmer(animal.ownerID.Value));
+                        animal.pet(Game1.GetPlayer(animal.ownerID.Value));
                         animal.friendshipTowardFarmer.Value = Math.Min(1000, animal.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
                     }
                 }
