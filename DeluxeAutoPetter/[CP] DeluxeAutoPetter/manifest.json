@@ -1,7 +1,7 @@
 {
   "Name": "Content Patches for Deluxe Auto-Petter",
   "Author": "Frostiverse",
-  "Version": "1.1.4",
+  "Version": "1.1.5",
   "Description": "This is the patcher that adds the necessary data for the Deluxe Auto-Petter mod.",
   "UniqueID": "Frostiverse.DeluxeAutoPetter.CP",
   "MinimumApiVersion": "3.0.0",
