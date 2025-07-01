@@ -11,6 +11,8 @@ namespace DeluxeAutoPetter
 {
     internal sealed class DeluxeAutoPetter : Mod
     {
+        public static bool IS_REFRESH_NEEDED = true;
+
         private static bool IS_DATA_LOADED = false;
         private static DeluxeAutoPetterConfig? Config;
         private static readonly Dictionary<string, int> DELUXE_AUTO_PETTER_LOCATIONS = new();
@@ -21,15 +23,16 @@ namespace DeluxeAutoPetter
             Config = helper.ReadConfig<DeluxeAutoPetterConfig>();
 
             QuestDetails.Initialize(ModManifest.UniqueID);
+            GameLocation.RegisterTileAction($"{ModManifest.UniqueID}.Open_Donation_Menu", QuestDetails.DonationBoxTileAction);
 
             helper.Events.Multiplayer.ModMessageReceived += OnModMessageReceived;
             helper.Events.Multiplayer.PeerConnected += OnPeerConnected;
 
             helper.Events.GameLoop.GameLaunched += OnGameLaunched;
             helper.Events.GameLoop.ReturnedToTitle += OnReturnedToTitle;
+            helper.Events.Content.AssetRequested += OnAssetRequested;
 
             helper.Events.GameLoop.UpdateTicked += OnUpdateTicked;
-            helper.Events.Input.ButtonPressed += OnButtonPressed;
             helper.Events.GameLoop.SaveLoaded += OnSaveLoaded;
             helper.Events.Player.InventoryChanged += OnPlayerInventoryChanged;
             helper.Events.GameLoop.DayStarted += OnDayStarted;
@@ -69,6 +72,7 @@ namespace DeluxeAutoPetter
         {
             DELUXE_AUTO_PETTER_LOCATIONS.Clear();
             IS_DATA_LOADED = false;
+            IS_REFRESH_NEEDED = true;
         }
 
         private void OnGameLaunched(object? sender, GameLaunchedEventArgs e)
@@ -84,10 +88,22 @@ namespace DeluxeAutoPetter
         {
             if (!Context.IsWorldReady) return;
 
-            if (Game1.player.hasQuest(QuestDetails.GetQuestID()))
+            else if (Game1.player.hasQuest(QuestDetails.GetQuestID()))
             {
-                QuestDetails.ShowDropboxLocator(true);
-                if (Game1.activeClickableMenu is null && QuestDetails.IsMouseOverDropbox(Game1.currentCursorTile)) Game1.mouseCursor = Game1.cursor_grab;
+                Game1.getLocationFromName(QuestDetails.GetDropBoxLocationName()).dropBoxIndicatorLocation = QuestDetails.GetDropBoxIndicatorLocation();
+                Game1.getLocationFromName(QuestDetails.GetDropBoxLocationName()).showDropboxIndicator = true;
+                if (IS_REFRESH_NEEDED)
+                {
+                    Helper.GameContent.InvalidateCache("Maps/Mountain");
+                    IS_REFRESH_NEEDED = false;
+                }
+            }
+            else if (Game1.player.mailForTomorrow.Contains(QuestDetails.GetQuestRewardMailID()) && IS_REFRESH_NEEDED)
+            {
+                Game1.getLocationFromName(QuestDetails.GetDropBoxLocationName()).dropBoxIndicatorLocation = new Vector2(0, 0);
+                Game1.getLocationFromName(QuestDetails.GetDropBoxLocationName()).showDropboxIndicator = false;
+                Helper.GameContent.InvalidateCache("Maps/Mountain");
+                IS_REFRESH_NEEDED = false;
             }
         }
 
@@ -115,20 +131,6 @@ namespace DeluxeAutoPetter
 
             DELUXE_AUTO_PETTER_LOCATIONS.TryGetValue(e.Location.NameOrUniqueName, out int amount);
             if (amount <= 0) DELUXE_AUTO_PETTER_LOCATIONS.Remove(e.Location.NameOrUniqueName);
-        }
-
-        private void OnButtonPressed(object? sender, ButtonPressedEventArgs e)
-        {
-            if (!(Context.IsWorldReady &&
-                Game1.currentLocation.Equals(Game1.getLocationFromName(QuestDetails.GetDropBoxGameLocationString())) &&
-                Game1.player.hasQuest(QuestDetails.GetQuestID()) &&
-                e.Button.IsActionButton()))
-                return;
-
-            Vector2 distanceVector = QuestDetails.GetInteractionDistanceFromDropboxVector(Game1.player.GetToolLocation());
-
-            if (Math.Abs(distanceVector.X) < (Game1.tileSize * 1.5) && Math.Abs(distanceVector.Y) < Game1.tileSize / 2)
-                Game1.activeClickableMenu ??= QuestDetails.CreateQuestContainerMenu();
         }
 
         private void OnSaveLoaded(object? sender, SaveLoadedEventArgs e)
@@ -160,38 +162,38 @@ namespace DeluxeAutoPetter
 
         private void OnPlayerInventoryChanged(object? sender, InventoryChangedEventArgs e)
         {
-            if (QuestDetails.IsQuestDataNull() && !Context.IsMainPlayer) return;
+            if (QuestDetails.IsQuestDataNull()
+                || !Context.IsMainPlayer
+                || e.Player.mailReceived.Contains(QuestDetails.GetQuestMailID())
+                || e.Player.mailbox.Contains(QuestDetails.GetQuestMailID())
+                || e.Player.mailForTomorrow.Contains(QuestDetails.GetQuestMailID())
+                || !e.Added.Any(item => item.QualifiedItemId.Equals(QuestDetails.GetAutoPetterID())))
+                return;
 
-            if (!QuestDetails.GetIsTriggered() && e.Added.Any(item => item.QualifiedItemId.Equals(QuestDetails.GetAutoPetterID())))
-            {
-                e.Player.mailForTomorrow.Add(QuestDetails.GetQuestMailID());
-                QuestDetails.SetIsTriggered(true);
-            }
+            e.Player.mailForTomorrow.Add(QuestDetails.GetQuestMailID());
         }
 
         private void OnDayStarted(object? sender, DayStartedEventArgs e)
         {
             if (!Context.IsMainPlayer) return;
 
-            foreach (KeyValuePair<string, int> locationsWithPetters in DELUXE_AUTO_PETTER_LOCATIONS)
+            if (Config is not null && Config.GlobalPetting)
             {
-                GameLocation location = Game1.getLocationFromName(locationsWithPetters.Key);
-
-                foreach (FarmAnimal animal in location.Animals.Values)
+                if (DELUXE_AUTO_PETTER_LOCATIONS.Count > 0)
                 {
-                    if (!animal.wasPet.Value)
+                    Utility.ForEachLocation((GameLocation location) =>
                     {
-                        animal.pet(Game1.GetPlayer(animal.ownerID.Value));
-                        animal.friendshipTowardFarmer.Value = Math.Min(1000, animal.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
-                    }
+                        PetAnimalsInLocation(location);
+                        return true;
+                    });
                 }
-                foreach (NPC npc in location.characters)
+            }
+            else
+            {
+                foreach (KeyValuePair<string, int> locationsWithPetters in DELUXE_AUTO_PETTER_LOCATIONS)
                 {
-                    if (npc is Pet pet)
-                    {
-                        pet.grantedFriendshipForPet.Set(true);
-                        pet.friendshipTowardFarmer.Value = Math.Min(1000, pet.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
-                    }
+                    GameLocation location = Game1.getLocationFromName(locationsWithPetters.Key);
+                    PetAnimalsInLocation(location);
                 }
             }
         }
@@ -201,6 +203,23 @@ namespace DeluxeAutoPetter
             if (!IS_DATA_LOADED && Context.IsMainPlayer) return;
             else if (Context.IsMainPlayer) MultiplayerHandler.SavePerPlayerQuestData(Helper);
             else Helper.Multiplayer.SendMessage(MultiplayerHandler.GetPlayerQuestData(Game1.player.UniqueMultiplayerID), nameof(MultiplayerHandler.QuestData), new[] { ModManifest.UniqueID });
+        }
+
+        private void OnAssetRequested(object? sender, AssetRequestedEventArgs e)
+        {
+            if (Context.IsWorldReady
+                && Game1.player.hasQuest(QuestDetails.GetQuestID())
+                && e.NameWithoutLocale.IsEquivalentTo("Maps/Mountain"))
+            {
+                e.Edit(asset => {
+                    IAssetDataForMap editor = asset.AsMap();
+                    editor.Data.Properties[$"{ModManifest.UniqueID}.Open_Donation_Menu"] = true;
+                    foreach ((int, int) tileLocation in QuestDetails.GetDropBoxTileLocations())
+                    {
+                        editor.Data.GetLayer("Buildings").Tiles[tileLocation.Item1, tileLocation.Item2].Properties["Action"] = $"{ModManifest.UniqueID}.Open_Donation_Menu";
+                    }
+                });
+            }
         }
 
         private void CreateMenu()
@@ -223,25 +242,33 @@ namespace DeluxeAutoPetter
                 max: 1000,
                 interval: 1
             );
+
+            configMenu.AddBoolOption(
+                mod: ModManifest,
+                getValue: () => Config.GlobalPetting,
+                setValue: value => Config.GlobalPetting = value,
+                name: () => I18n.Config_GlobalPetting()
+            );
         }
 
-        private void DisableMenuForNonHost()
+        private static void PetAnimalsInLocation(GameLocation location)
         {
-            IGenericModConfigMenuApi? configMenu = Helper.ModRegistry.GetApi<IGenericModConfigMenuApi>("spacechase0.GenericModConfigMenu");
-            if (configMenu is null || Config is null) return;
-
-            configMenu.Unregister(ModManifest);
-
-            configMenu.Register(
-                mod: ModManifest,
-                reset: () => Config = new DeluxeAutoPetterConfig(),
-                save: () => Helper.WriteConfig(Config)
-            );
-
-            configMenu.AddParagraph(
-                mod: ModManifest,
-                text: () => I18n.Config_DisabledMessage()
-            );
+            foreach (FarmAnimal animal in location.Animals.Values)
+            {
+                if (!animal.wasPet.Value)
+                {
+                    animal.pet(Game1.GetPlayer(animal.ownerID.Value));
+                    animal.friendshipTowardFarmer.Value = Math.Min(1000, animal.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
+                }
+            }
+            foreach (NPC npc in location.characters)
+            {
+                if (npc is Pet pet)
+                {
+                    pet.grantedFriendshipForPet.Set(true);
+                    pet.friendshipTowardFarmer.Value = Math.Min(1000, pet.friendshipTowardFarmer.Value + (Config is null ? 0 : Config.AdditionalFriendshipGain));
+                }
+            }
         }
     }
 }

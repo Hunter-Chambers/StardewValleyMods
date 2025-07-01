@@ -22,7 +22,7 @@ namespace DeluxeAutoPetter.helpers
         private static readonly string DROPBOX_GAME_LOCATION = "Mountain";
         private static readonly Vector2 DROPBOX_LOCATION = new Vector2(18.5f, 25.5f) * Game1.tileSize;
         private static readonly Vector2 DROPBOX_INDICATOR_LOCATION = new(DROPBOX_LOCATION.X - 3, DROPBOX_LOCATION.Y - Game1.tileSize); // the indicator is 6px wide, so -3px to center it
-        private static readonly Rectangle DROPBOX_BOUNDING_BOX = new((int)DROPBOX_LOCATION.X - (int)(Game1.tileSize * 1.5), (int)DROPBOX_LOCATION.Y - (int)(Game1.tileSize * 2.5), Game1.tileSize * 3, Game1.tileSize * 3);
+        private static readonly (int, int)[] DROPBOX_TILE_LOCATIONS = new[] { (17, 25), (18, 25), (19, 25) };
 
         private static readonly Dictionary<string, int> DONATION_REQUIREMENTS = new()
         {
@@ -38,20 +38,11 @@ namespace DeluxeAutoPetter.helpers
          * Variable Getters
          ********************** **/
         // ID Getters
-        public static string GetAutoPetterID()
-        {
-            return AUTO_PETTER_ID;
-        }
+        public static string GetAutoPetterID() { return AUTO_PETTER_ID; }
 
-        public static string GetHardwoodID()
-        {
-            return HARDWOOD_ID;
-        }
+        public static string GetHardwoodID() { return HARDWOOD_ID; }
 
-        public static string GetIridiumBarID()
-        {
-            return IRIDIUM_BAR_ID;
-        }
+        public static string GetIridiumBarID() { return IRIDIUM_BAR_ID; }
 
         public static string GetQuestID()
         {
@@ -67,6 +58,13 @@ namespace DeluxeAutoPetter.helpers
             return QUEST_MAIL_ID;
         }
 
+        public static string GetQuestRewardMailID()
+        {
+            if (QUEST_REWARD_MAIL_ID is null) throw new ArgumentNullException($"{nameof(QUEST_REWARD_MAIL_ID)} has not been initialized! The {nameof(Initialize)} method must be called first!");
+
+            return QUEST_REWARD_MAIL_ID;
+        }
+
         public static string GetDeluxeAutoPetterID()
         {
             if (DELUXE_AUTO_PETTER_ID is null) throw new ArgumentNullException($"{nameof(DELUXE_AUTO_PETTER_ID)} has not been initialized! The {nameof(Initialize)} method must be called first!");
@@ -74,28 +72,11 @@ namespace DeluxeAutoPetter.helpers
             return DELUXE_AUTO_PETTER_ID;
         }
 
+        public static string GetDropBoxLocationName() { return DROPBOX_GAME_LOCATION; }
+
         // Data Getters
-        public static string GetDropBoxGameLocationString()
-        {
-            return DROPBOX_GAME_LOCATION;
-        }
-
-        public static bool GetIsTriggered()
-        {
-            if (QUEST_DATA is null) throw new ArgumentNullException($"{nameof(QUEST_DATA)} has not been initialized! The {nameof(LoadQuestData)} method must be called first!");
-
-            return QUEST_DATA.IsTriggered;
-        }
-
-        /** **********************
-         * Data Setters
-         ********************** **/
-        public static void SetIsTriggered(bool isTriggered)
-        {
-            if (QUEST_DATA is null) throw new ArgumentNullException($"{nameof(QUEST_DATA)} has not been initialized! The {nameof(LoadQuestData)} method must be called first!");
-
-            QUEST_DATA.IsTriggered = isTriggered;
-        }
+        public static Vector2 GetDropBoxIndicatorLocation() { return DROPBOX_INDICATOR_LOCATION; }
+        public static (int, int)[] GetDropBoxTileLocations() { return DROPBOX_TILE_LOCATIONS; }
 
         /** **********************
          * Public Methods
@@ -115,28 +96,19 @@ namespace DeluxeAutoPetter.helpers
             CreateDonatedInventory(QUEST_DATA.DonationCounts);
         }
 
-        public static bool IsQuestDataNull()
+        public static bool DonationBoxTileAction(GameLocation _, string[] __, Farmer player, Point ___)
         {
-            return QUEST_DATA is null;
+            if (player.hasQuest(GetQuestID()))
+            {
+                Game1.activeClickableMenu ??= CreateQuestContainerMenu();
+                return true;
+            }
+            return false;
         }
+
+        public static bool IsQuestDataNull() { return QUEST_DATA is null; }
 
         // Visual Methods
-        public static void ShowDropboxLocator(bool doShow)
-        {
-            Game1.getLocationFromName(DROPBOX_GAME_LOCATION).showDropboxIndicator = doShow;
-            Game1.getLocationFromName(DROPBOX_GAME_LOCATION).dropBoxIndicatorLocation = DROPBOX_INDICATOR_LOCATION;
-        }
-
-        public static bool IsMouseOverDropbox(Vector2 mousePosition)
-        {
-            return DROPBOX_BOUNDING_BOX.Contains(mousePosition * Game1.tileSize);
-        }
-
-        public static Vector2 GetInteractionDistanceFromDropboxVector(Vector2 playerInteractionPosition)
-        {
-            return playerInteractionPosition - DROPBOX_LOCATION;
-        }
-
         public static QuestContainerMenu CreateQuestContainerMenu()
         {
             if (DONATED_ITEMS is null) throw new ArgumentNullException($"{nameof(DONATED_ITEMS)} has not been initialized! The {nameof(LoadQuestData)} method must be called first!");
@@ -147,14 +119,15 @@ namespace DeluxeAutoPetter.helpers
         /** **********************
          * Private Methods
          ********************** **/
-        private static bool HighlightAcceptableItems(Item item)
-        {
-            return DONATION_REQUIREMENTS.ContainsKey(item.QualifiedItemId);
-        }
+        private static bool HighlightAcceptableItems(Item item) { return DONATION_REQUIREMENTS.ContainsKey(item.QualifiedItemId); }
 
         private static int GetAcceptCount(Item item)
         {
-            if (DONATED_ITEMS is null) throw new ArgumentNullException($"{nameof(DONATED_ITEMS)} has not been initialized! The {nameof(LoadQuestData)} method must be called first!");
+            if (DONATED_ITEMS is null)
+            {
+                string errorMessage = $"{nameof(DONATED_ITEMS)} has not been initialized! The {nameof(LoadQuestData)} method must be called first!";
+                throw new ArgumentNullException(errorMessage);
+            }
 
             if (!HighlightAcceptableItems(item)) return 0; // basically means 'if not valid, then return 0'
 
@@ -172,13 +145,14 @@ namespace DeluxeAutoPetter.helpers
             if (QUEST_DATA is null) throw new ArgumentNullException($"{nameof(QUEST_DATA)} has not been initialized! The {nameof(LoadQuestData)} method must be called first!");
 
             foreach (Item? item in DONATED_ITEMS)
-                if (item is not null) QUEST_DATA.DonationCounts[item.QualifiedItemId] = item.Stack;
+                if (item is not null)
+                    QUEST_DATA.DonationCounts[item.QualifiedItemId] = item.Stack;
 
             if (AreDonationRequirementsMet())
             {
                 Game1.player.completeQuest(QUEST_ID);
-                ShowDropboxLocator(false);
                 Game1.player.mailForTomorrow.Add(QUEST_REWARD_MAIL_ID);
+                DeluxeAutoPetter.IS_REFRESH_NEEDED = true;
             }
         }
 

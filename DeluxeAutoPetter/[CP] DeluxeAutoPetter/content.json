@@ -43,14 +43,28 @@
         {
             "Action": "EditData",
             "Target": "Data/Shops",
-            "TargetField": ["AnimalShop", "Items"],
+            "TargetField": [ "AnimalShop", "Items" ],
             "Entries": {
                 "(BC){{ModDataId}}.DeluxeAutoPetter": {
                     "Id": "(BC){{ModDataId}}.DeluxeAutoPetter",
                     "ItemId": "(BC){{ModDataId}}.DeluxeAutoPetter",
                     "Condition": "PLAYER_HAS_MAIL Current {{ModDataId}}.Mail1 Received",
                     "Price": 75000
+                },
+                "(BC){{ModDataId}}.DeluxeAutoPetter (Recipe)": {
+                    "Id": "(BC){{ModDataId}}.DeluxeAutoPetter (Recipe)",
+                    "ItemId": "(BC){{ModDataId}}.DeluxeAutoPetter",
+                    "Condition": "PLAYER_HAS_MAIL Current {{ModDataId}}.Mail1 Received",
+                    "Price": 125000,
+                    "IsRecipe": true
                 }
+            }
+        },
+        {
+            "Action": "EditData",
+            "Target": "Data/CraftingRecipes",
+            "Entries": {
+                "Deluxe Auto-Petter": "(BC)272 1 709 300 337 25//{{ModDataId}}.DeluxeAutoPetter/true/null/"
             }
         }
     ]
