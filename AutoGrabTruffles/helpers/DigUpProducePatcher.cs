@@ -21,8 +21,6 @@ namespace AutoGrabTruffles
             TRUFFLE_QUALIFIED_ID, "(O)i24KittyKat.PigsCP_BlueTruffle", "(O)i24KittyKat.PigsCP_GoldenTruffle", "(O)i24KittyKat.PigsCP_VoidTruffle",
             "(O)WhiteTruffle"
         };
-        private static readonly string[] VALID_MODIFIABLE_PRODUCE_QUALIFIED_IDS = VALID_TRUFFLE_QUALIFIED_IDS.Concat(new string[] {
-        }).ToArray();
 
         internal static void Initialize(IMonitor monitor, AutoGrabTrufflesConfig config)
         {
@@ -79,27 +77,25 @@ namespace AutoGrabTruffles
 
         private static bool DidHarvestProduce(FarmAnimal animal, StardewValley.Object produce)
         {
-            bool didHarvest = false;
-
-            Item produceItem = produce.getOne();
+            bool doHarvestTwo = false;
             Random random = Utility.CreateRandom(animal.myID.Value / 2.0, Game1.stats.DaysPlayed, Game1.timeOfDay);
 
-            bool doHarvestTwo = false;
-            if (VALID_MODIFIABLE_PRODUCE_QUALIFIED_IDS.Contains(produce.QualifiedItemId))
+            Item produceItem = produce.getOne();
+            produceItem.Quality = GetTruffleQuality(random, animal.ownerID.Get());
+
+            if (VALID_TRUFFLE_QUALIFIED_IDS.Contains(produce.QualifiedItemId))
             {
-                produceItem.Quality = GetTruffleQuality(random, animal.ownerID.Get());
                 doHarvestTwo = DoesTruffleDropTwo(random, animal.ownerID.Get());
                 if (doHarvestTwo) produceItem.Stack++;
             }
 
             List<StardewValley.Object> autoGrabbers = GetAutoGrabbersInAnimalHome(animal.home);
+            bool didHarvest = DidAddItemToAutoGrabberWithSpace(autoGrabbers, produceItem);
 
-            if (autoGrabbers.Count > 0 && DidAddItemToAutoGrabberWithSpace(autoGrabbers, produceItem))
+            if (didHarvest)
             {
-                didHarvest = true;
-
                 if (CONFIG.UpdateGameStats) {
-                    Game1.stats.TrufflesFound++;
+                    if (VALID_TRUFFLE_QUALIFIED_IDS.Contains(produce.QualifiedItemId)) Game1.stats.TrufflesFound++;
                     Game1.stats.ItemsForaged++;
                     if (doHarvestTwo) Game1.stats.ItemsForaged++;
                 }
@@ -108,7 +104,7 @@ namespace AutoGrabTruffles
                 {
                     if (CONFIG.WhoGainsExperience.Equals("Everyone"))
                     {
-                        List<Farmer> farmers = Game1.getAllFarmers().ToList();
+                        List<Farmer> farmers = Game1.getOnlineFarmers().ToList();
                         foreach (Farmer farmer in farmers)
                         {
                             farmer.gainExperience(Farmer.foragingSkill, 7);
@@ -117,9 +113,12 @@ namespace AutoGrabTruffles
                     }
                     else
                     {
-                        Farmer farmer = Game1.getFarmer(animal.ownerID.Get());
-                        farmer.gainExperience(Farmer.foragingSkill, 7);
-                        if (doHarvestTwo) farmer.gainExperience(Farmer.foragingSkill, 7);
+                        Farmer? farmer = Game1.GetPlayer(animal.ownerID.Get(), true);
+                        if (farmer is not null)
+                        {
+                            farmer.gainExperience(Farmer.foragingSkill, 7);
+                            if (doHarvestTwo) farmer.gainExperience(Farmer.foragingSkill, 7);
+                        }
                     }
                 }
             }
@@ -147,7 +146,7 @@ namespace AutoGrabTruffles
             if (!CONFIG.ApplyBotanistProfession)
             {
                 hasBotanist = false;
-                Farmer farmer = Game1.getFarmer(pigOwnerID);
+                Farmer farmer = Game1.GetPlayer(pigOwnerID, true) ?? Game1.MasterPlayer;
                 foragingLevel = farmer.ForagingLevel;
             }
             else if (CONFIG.WhoseBotanistProfessionToUse.Equals("Anyone"))
@@ -166,17 +165,15 @@ namespace AutoGrabTruffles
                     }
                 }
                 foragingLevel = 0;
-                foreach (Farmer farmer in Game1.getAllFarmers())
+                foreach (Farmer farmer in farmers)
                 {
-                    if (farmer.GetSkillLevel(Farmer.foragingSkill) > foragingLevel)
-                    {
-                        foragingLevel = farmer.GetSkillLevel(Farmer.foragingSkill);
-                    }
+                    int foragingSkillLevel = farmer.GetSkillLevel(Farmer.foragingSkill);
+                    foragingLevel = Math.Max(foragingLevel, foragingSkillLevel);
                 }
             }
             else
             {
-                Farmer farmer = Game1.getFarmer(pigOwnerID);
+                Farmer farmer = Game1.GetPlayer(pigOwnerID) ?? Game1.MasterPlayer;
                 hasBotanist = farmer.professions.Contains(Farmer.botanist);
                 foragingLevel = farmer.ForagingLevel;
             }
@@ -230,7 +227,7 @@ namespace AutoGrabTruffles
             }
             else
             {
-                Farmer farmer = Game1.getFarmer(pigOwnerID);
+                Farmer farmer = Game1.GetPlayer(pigOwnerID) ?? Game1.MasterPlayer;
                 hasGatherer = farmer.professions.Contains(Farmer.gatherer);
             }
 
